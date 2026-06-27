@@ -106,6 +106,23 @@ pub(crate) fn parse_root(p: &mut HtmlParser) {
     m.complete(p, HTML_ROOT);
 }
 
+/// Returns `true` if the parser is positioned at the start of a `<!doctype ...>`
+/// directive. The `doctype` keyword is only lexed as such in the
+/// [`HtmlLexContext::Doctype`] context, so this speculatively lexes `<` `!` in
+/// that context and rewinds, leaving the parser state untouched.
+fn is_at_doc_type(p: &mut HtmlParser) -> bool {
+    if !(p.at(T![<]) && p.nth_at(1, T![!])) {
+        return false;
+    }
+
+    let checkpoint = p.checkpoint();
+    p.bump_with_context(T![<], HtmlLexContext::InsideTag);
+    p.bump_with_context(T![!], HtmlLexContext::Doctype);
+    let at_doc_type = p.at(T![doctype]);
+    p.rewind(checkpoint);
+    at_doc_type
+}
+
 fn parse_doc_type(p: &mut HtmlParser) -> ParsedSyntax {
     if !(p.at(T![<]) && p.nth_at(1, T![!])) {
         return Absent;
@@ -421,6 +438,14 @@ pub(crate) fn parse_html_element(p: &mut HtmlParser) -> ParsedSyntax {
     match p.cur() {
         T!["<![CDATA["] => parse_cdata_section(p),
         T![<?] => parse_processing_instruction(p),
+        // In Astro layouts the `<!doctype>` directive is preceded by frontmatter
+        // and often an inline `<script>`, so it appears after other top-level
+        // nodes rather than at the document preamble and reaches the element
+        // list. Route it to the doctype parser here so it isn't handed to
+        // `parse_element`, which doesn't recognize `<!`. This is scoped to Astro
+        // because in plain HTML the doctype must appear at the start; other
+        // `<!...>` markup keeps falling through to `parse_element`.
+        T![<] if Astro.is_supported(p) && is_at_doc_type(p) => parse_doc_type(p),
         T![<] => parse_element(p),
         T!["{{"] => HtmlSyntaxFeatures::DoubleTextExpressions.parse_exclusive_syntax(
             p,

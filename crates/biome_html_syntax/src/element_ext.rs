@@ -34,6 +34,7 @@ impl AnyHtmlElement {
         match self {
             Self::AnyHtmlContent(_)
             | Self::HtmlBogusElement(_)
+            | Self::HtmlDirective(_)
             | Self::HtmlSelfClosingElement(_)
             | Self::HtmlProcessingInstruction(_)
             | Self::HtmlCdataSection(_) => false,
@@ -45,6 +46,7 @@ impl AnyHtmlElement {
         match self {
             Self::AnyHtmlContent(_)
             | Self::HtmlBogusElement(_)
+            | Self::HtmlDirective(_)
             | Self::HtmlSelfClosingElement(_)
             | Self::HtmlProcessingInstruction(_)
             | Self::HtmlCdataSection(_) => false,
@@ -63,7 +65,10 @@ impl AnyHtmlElement {
                 element.find_attribute_by_name(name_to_lookup)
             }
             // Other variants don't have attributes
-            Self::AnyHtmlContent(_) | Self::HtmlBogusElement(_) | Self::HtmlCdataSection(_) => None,
+            Self::AnyHtmlContent(_)
+            | Self::HtmlBogusElement(_)
+            | Self::HtmlDirective(_)
+            | Self::HtmlCdataSection(_) => None,
         }
     }
 

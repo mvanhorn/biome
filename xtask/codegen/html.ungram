@@ -73,6 +73,7 @@ HtmlElementList = AnyHtmlElement*
 AnyHtmlElement =
 	HtmlSelfClosingElement
 	| HtmlElement
+	| HtmlDirective
 	| AnyHtmlContent
 	| HtmlCdataSection
 	| HtmlProcessingInstruction
