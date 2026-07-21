@@ -272,7 +272,10 @@ fn parse_processing_instruction(p: &mut HtmlParser) -> ParsedSyntax {
         ));
     }
 
-    AttributeList.parse_list(p);
+    AttributeList {
+        is_embedded_language_tag: false,
+    }
+    .parse_list(p);
 
     p.expect(T![?>]);
 
@@ -312,7 +315,10 @@ fn parse_element(p: &mut HtmlParser) -> ParsedSyntax {
         _ => {}
     }
 
-    AttributeList.parse_list(p);
+    AttributeList {
+        is_embedded_language_tag,
+    }
+    .parse_list(p);
 
     if p.at(T![/]) {
         p.bump_with_context(T![/], inside_tag_context(p));
@@ -509,7 +515,9 @@ impl ParseNodeList for ElementList {
 }
 
 #[derive(Default)]
-struct AttributeList;
+struct AttributeList {
+    is_embedded_language_tag: bool,
+}
 
 impl ParseNodeList for AttributeList {
     type Kind = HtmlSyntaxKind;
@@ -517,7 +525,7 @@ impl ParseNodeList for AttributeList {
     const LIST_KIND: Self::Kind = HTML_ATTRIBUTE_LIST;
 
     fn parse_element(&mut self, p: &mut Self::Parser<'_>) -> ParsedSyntax {
-        parse_attribute(p)
+        parse_attribute(p, self.is_embedded_language_tag)
     }
 
     fn is_at_list_end(&self, p: &mut Self::Parser<'_>) -> bool {
@@ -537,7 +545,7 @@ impl ParseNodeList for AttributeList {
     }
 }
 
-fn parse_attribute(p: &mut HtmlParser) -> ParsedSyntax {
+fn parse_attribute(p: &mut HtmlParser, is_embedded_language_tag: bool) -> ParsedSyntax {
     if !is_at_attribute_start(p) {
         return Absent;
     }
@@ -625,7 +633,15 @@ fn parse_attribute(p: &mut HtmlParser) -> ParsedSyntax {
             }
 
             if p.at(T![=]) {
-                parse_attribute_initializer(p, AttrInitializerContext::Regular).ok();
+                parse_attribute_initializer(
+                    p,
+                    if is_embedded_language_tag {
+                        AttrInitializerContext::EmbeddedLanguageTag
+                    } else {
+                        AttrInitializerContext::Regular
+                    },
+                )
+                .ok();
             }
             Present(m.complete(p, HTML_ATTRIBUTE))
         }
@@ -807,10 +823,10 @@ fn parse_attribute_initializer(
         return Present(m.complete(p, HTML_ATTRIBUTE_INITIALIZER_CLAUSE));
     }
 
-    let attr_value_context = if Svelte.is_supported(p) {
-        HtmlLexContext::SvelteAttributeValue
-    } else {
-        HtmlLexContext::AttributeValue
+    let attr_value_context = match context {
+        AttrInitializerContext::EmbeddedLanguageTag => HtmlLexContext::AttributeValue,
+        _ if Svelte.is_supported(p) => HtmlLexContext::SvelteAttributeValue,
+        _ => HtmlLexContext::AttributeValue,
     };
     p.bump_with_context(T![=], attr_value_context);
     if p.at(T!['{']) {
@@ -872,6 +888,7 @@ fn parse_attribute_initializer(
 pub(crate) enum AttrInitializerContext {
     #[default]
     Regular,
+    EmbeddedLanguageTag,
     VueVFor,
 }
 

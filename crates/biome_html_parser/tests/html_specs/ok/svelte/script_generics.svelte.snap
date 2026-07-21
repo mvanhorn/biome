@@ -1,0 +1,107 @@
+---
+source: crates/biome_html_parser/tests/spec_test.rs
+expression: snapshot
+---
+
+## Input
+
+```svelte
+<script lang="ts" generics="T, U, Item extends { text: string; nested: { value: string } }"></script>
+
+```
+
+
+## AST
+
+```
+HtmlRoot {
+    bom_token: missing (optional),
+    frontmatter: missing (optional),
+    directive: missing (optional),
+    html: HtmlElementList [
+        HtmlElement {
+            opening_element: HtmlOpeningElement {
+                l_angle_token: L_ANGLE@0..1 "<" [] [],
+                name: HtmlTagName {
+                    value_token: SCRIPT_KW@1..8 "script" [] [Whitespace(" ")],
+                },
+                attributes: HtmlAttributeList [
+                    HtmlAttribute {
+                        name: HtmlAttributeName {
+                            value_token: HTML_LITERAL@8..12 "lang" [] [],
+                        },
+                        initializer: HtmlAttributeInitializerClause {
+                            eq_token: EQ@12..13 "=" [] [],
+                            value: HtmlString {
+                                value_token: HTML_STRING_LITERAL@13..18 "\"ts\"" [] [Whitespace(" ")],
+                            },
+                        },
+                    },
+                    HtmlAttribute {
+                        name: HtmlAttributeName {
+                            value_token: HTML_LITERAL@18..26 "generics" [] [],
+                        },
+                        initializer: HtmlAttributeInitializerClause {
+                            eq_token: EQ@26..27 "=" [] [],
+                            value: HtmlString {
+                                value_token: HTML_STRING_LITERAL@27..91 "\"T, U, Item extends { text: string; nested: { value: string } }\"" [] [],
+                            },
+                        },
+                    },
+                ],
+                r_angle_token: R_ANGLE@91..92 ">" [] [],
+            },
+            children: HtmlElementList [],
+            closing_element: HtmlClosingElement {
+                l_angle_token: L_ANGLE@92..93 "<" [] [],
+                slash_token: SLASH@93..94 "/" [] [],
+                name: HtmlTagName {
+                    value_token: SCRIPT_KW@94..100 "script" [] [],
+                },
+                r_angle_token: R_ANGLE@100..101 ">" [] [],
+            },
+        },
+    ],
+    eof_token: EOF@101..102 "" [Newline("\n")] [],
+}
+```
+
+## CST
+
+```
+0: HTML_ROOT@0..102
+  0: (empty)
+  1: (empty)
+  2: (empty)
+  3: HTML_ELEMENT_LIST@0..101
+    0: HTML_ELEMENT@0..101
+      0: HTML_OPENING_ELEMENT@0..92
+        0: L_ANGLE@0..1 "<" [] []
+        1: HTML_TAG_NAME@1..8
+          0: SCRIPT_KW@1..8 "script" [] [Whitespace(" ")]
+        2: HTML_ATTRIBUTE_LIST@8..91
+          0: HTML_ATTRIBUTE@8..18
+            0: HTML_ATTRIBUTE_NAME@8..12
+              0: HTML_LITERAL@8..12 "lang" [] []
+            1: HTML_ATTRIBUTE_INITIALIZER_CLAUSE@12..18
+              0: EQ@12..13 "=" [] []
+              1: HTML_STRING@13..18
+                0: HTML_STRING_LITERAL@13..18 "\"ts\"" [] [Whitespace(" ")]
+          1: HTML_ATTRIBUTE@18..91
+            0: HTML_ATTRIBUTE_NAME@18..26
+              0: HTML_LITERAL@18..26 "generics" [] []
+            1: HTML_ATTRIBUTE_INITIALIZER_CLAUSE@26..91
+              0: EQ@26..27 "=" [] []
+              1: HTML_STRING@27..91
+                0: HTML_STRING_LITERAL@27..91 "\"T, U, Item extends { text: string; nested: { value: string } }\"" [] []
+        3: R_ANGLE@91..92 ">" [] []
+      1: HTML_ELEMENT_LIST@92..92
+      2: HTML_CLOSING_ELEMENT@92..101
+        0: L_ANGLE@92..93 "<" [] []
+        1: SLASH@93..94 "/" [] []
+        2: HTML_TAG_NAME@94..100
+          0: SCRIPT_KW@94..100 "script" [] []
+        3: R_ANGLE@100..101 ">" [] []
+  4: EOF@101..102 "" [Newline("\n")] []
+
+```
